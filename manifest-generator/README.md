@@ -61,7 +61,7 @@ The input file is organised into several high-level elements:
 * `manifest-version` (a positive integer), the version of the manifest specification
 * `manifest-sequence-number` (a positive integer), the anti-rollback counter of the manifest
 * `components`, a list of components that are described by the manifest
-* `certification-manifest`, a list of proof descriptors that verify the update package
+* `certification-manifest`, a list of proof descriptors used to formally verify the contents of the update package
 * `software-bill-of-materials`, an optional severable element containing the BOM of the components in the update package 
 
 
@@ -119,16 +119,16 @@ N.B. Be careful that certain strings can appear to be hex or base64 and will be 
 ## Certification manifest
 
 The certification manifest is a JSON map that contains one or more proof descriptors. Each of them has a fixed structure containing the following fields:
-* `property identifier`, which is used to uniquely identify the formal property that the proof descriptor refers to
+* `property identifier`, a string used to uniquely identify the formal property that the proof descriptor refers to
 * `component identifiers`, a list used to select which components are targeted by the considered proof (must match one or more component IDs)
-* `language identifier`, which is used to specify the formal language in which the proof is expressed
-* `proof certificate`, expressed in the formal language singled out by the language identifier (the encoding can be decided according to the capabilities of the parser)
-* `locality constraint`, which is a boolean flag whose setting requires the proof verification step to be performed on the device, without involving any communication with the external world
+* `language identifier`, a string used to specify the formal language in which the proof is expressed
+* `proof certificate`, a string containing the proof certificate expressed in the formal language singled out by the language identifier (the encoding can be decided according to the capabilities of the parser)
+* `locality constraint`, a boolean flag whose setting requires the proof verification step to be performed on the device, without involving any communication with the external world
 * `verification servers`, a list of URI of external servers which can be queried to perform the verification of the associated proof certificate (considered only when the locality constraint flag is not set)
 
 ## Software bill of materials
 
-The SBOM is a severable element representing the Software Bill of Material, which describes the components contained in the update. It can contain different kinds of information, such as the component provider, the dependency, the vulnerabilities, etc. 
+The SBOM is a severable element representing the Software Bill of Material, which describes the components contained in the update. It can contain different kinds of information, such as the component provider, its license, patch status, etc.
 
 Examples of SBOM can be found in the `examples` subfolder. They comply with the CycloneDX standard, have a JSON format and are included in the manifests used as examples after minimization and encoding in Base64. 
 
