@@ -7,8 +7,8 @@
                 "algorithm-id": "sha256",
                 "digest-bytes": "00112233445566778899aabbccddeeff0123456789abcdeffedcba9876543210"
             },
-            "install-size" : 34768,
-            "uri": "http://example.com/file1.bin",
+            "install-size" : 37,
+            "uri": "coap://example.com/file1_enc.bin",
             "vendor-id" : "fa6b4a53-d5ad-5fdf-be9d-e663e4d41ffe",
             "class-id" : "1492af14-2569-5e48-bf42-9b2d51f2ab45",
             "bootable" : true

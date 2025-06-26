@@ -61,7 +61,7 @@ The input file is organised into several high-level elements:
 * `manifest-version` (a positive integer), the version of the manifest specification
 * `manifest-sequence-number` (a positive integer), the anti-rollback counter of the manifest
 * `components`, a list of components that are described by the manifest
-* `certification-manifest`, a list of proof descriptors used to formally verify the contents of the update package
+* `certification-manifest`, a list of proof descriptors that verify the update package
 * `software-bill-of-materials`, an optional severable element containing the BOM of the components in the update package 
 
 
@@ -119,16 +119,16 @@ N.B. Be careful that certain strings can appear to be hex or base64 and will be 
 ## Certification manifest
 
 The certification manifest is a JSON map that contains one or more proof descriptors. Each of them has a fixed structure containing the following fields:
-* `property identifier`, a string used to uniquely identify the formal property that the proof descriptor refers to
+* `property identifier`, which is used to uniquely identify the formal property that the proof descriptor refers to
 * `component identifiers`, a list used to select which components are targeted by the considered proof (must match one or more component IDs)
-* `language identifier`, a string used to specify the formal language in which the proof is expressed
-* `proof certificate`, a string containing the proof certificate expressed in the formal language singled out by the language identifier (the encoding can be decided according to the capabilities of the parser)
-* `locality constraint`, a boolean flag whose setting requires the proof verification step to be performed on the device, without involving any communication with the external world
+* `language identifier`, which is used to specify the formal language in which the proof is expressed
+* `proof certificate`, expressed in the formal language singled out by the language identifier (the encoding can be decided according to the capabilities of the parser)
+* `locality constraint`, which is a boolean flag whose setting requires the proof verification step to be performed on the device, without involving any communication with the external world
 * `verification servers`, a list of URI of external servers which can be queried to perform the verification of the associated proof certificate (considered only when the locality constraint flag is not set)
 
 ## Software bill of materials
 
-The SBOM is a severable element representing the Software Bill of Material, which describes the components contained in the update. It can contain different kinds of information, such as the component provider, its license, patch status, etc.
+The SBOM is a severable element representing the Software Bill of Material, which describes the components contained in the update. It can contain different kinds of information, such as the component provider, the dependency, the vulnerabilities, etc. 
 
 Examples of SBOM can be found in the `examples` subfolder. They comply with the CycloneDX standard, have a JSON format and are included in the manifests used as examples after minimization and encoding in Base64. 
 
@@ -225,6 +225,25 @@ The `digest-bytes` is a string of either hex- or base64-encoded bytes. The same 
 }
 
 ```
+
+# Creating Manifests with Encrypted Payloads
+
+This tool supports a workflow for delivering firmware payloads that are encrypted using a pre-shared secret. This ensures the confidentiality of the firmware image while it is in transit and at rest on the update server. The device is responsible for decrypting the image after a successful download and hash verification.
+
+The encryption uses the AES-256-GCM algorithm, which provides both confidentiality and authentication. The overall process involves three main steps:
+
+Step 1: Encrypt the Firmware Payload
+A helper script, encrypt_image.py, is provided in the bin folder to perform this task. Run the script to encrypt your plaintext firmware file. It requires an input file, an output file path, and a shared secret.
+
+```
+# Usage
+python3 bin/encrypt_image.py <path-to-plaintext-firmware> <path-for-encrypted-output> --secret "your-pre-shared-secret"
+
+# Example
+python3 bin/encrypt_image.py ./firmware/update.bin ./firmware/encrypted_update.bin --secret "my-super-secret-key-123"
+```
+
+This will create encrypted_update.bin, which is the file you will host on your update server. The script uses a salted SHA-256 hash of your secret to derive the final 256-bit AES key. The output file is formatted as: [12-byte nonce][16-byte tag][ciphertext].
 
 # Invoking the suit-tool
 
