@@ -2,13 +2,24 @@ import os
 import subprocess
 import json
 import uuid
+import base64
 from fastapi import FastAPI, File, UploadFile
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+
 
 app = FastAPI()
+
+# Path of grype executable
+GRYPE_PATH = "/root/bin/grype"
 
 # Directory to store temporary SBOM files
 TEMP_DIR = "/tmp/sbom_files"
 os.makedirs(TEMP_DIR, exist_ok=True)
+
+# Path of private key file (in PEM format)
+PRIV_KEY = "/root/private_key.pem"
 
 def scan_sbom_with_grype(sbom_path: str) -> dict:
     """
@@ -17,7 +28,7 @@ def scan_sbom_with_grype(sbom_path: str) -> dict:
     try:
         # Run Grype command and capture output
         result = subprocess.run(
-            ["/root/bin/grype", sbom_path, "-o", "json"],
+            [GRYPE_PATH, sbom_path, "-o", "json"],
             capture_output=True,
             text=True,
             check=True
@@ -26,6 +37,34 @@ def scan_sbom_with_grype(sbom_path: str) -> dict:
     except subprocess.CalledProcessError as e:
         return {"error": f"Grype scan failed: {e.stderr}"}
 
+def sign_message(message: str) -> dict:
+    """
+    Sign a string using the server private key
+    """
+    with open(PRIV_KEY, "rb") as key_file:
+        private_key = serialization.load_pem_private_key(
+            key_file.read(),
+            password=None,
+            backend=default_backend()
+        )
+
+    msg_bytes = message.encode()
+    sgn_bytes = private_key.sign(
+        msg_bytes,
+        padding.PSS(
+            mgf = padding.MGF1(algorithm = hashes.SHA256()),
+            salt_length = padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+
+    msg_b64 = base64.b64encode(msg_bytes).decode("ascii")
+    sgn_b64 = base64.b64encode(sgn_bytes).decode("ascii")
+
+    signed_message = {"payload": msg_b64, "signature": sgn_b64 }
+    return signed_message
+
+    
 @app.post("/verify-sbom")
 async def verify_sbom(file: UploadFile = File(...)):
     """
@@ -51,7 +90,11 @@ async def verify_sbom(file: UploadFile = File(...)):
         else:
             vulnerability_count = 0
 
-        return {"status": "success", "vulnerability_count": vulnerability_count}
+        # Prepare and sign the report
+        report = {"status": "success", "vulnerability_count": vulnerability_count}
+        signed_report = sign_message(str(report))
+
+        return signed_report
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
