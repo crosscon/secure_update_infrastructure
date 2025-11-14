@@ -20,8 +20,8 @@ that the cvc5 binary is available in the execution path.
 ## Running the scripts
 
 Some basic usage information is available by running the scripts with the `-h`
-flag. More detailed documentation will be included in the deliverable 3.3 of
-the CROSSCON project.
+flag. More detailed documentation is included in Deliverable 5.7 of the
+CROSSCON project.
 
 
 
