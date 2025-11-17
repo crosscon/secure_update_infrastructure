@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 app = FastAPI()
 
 # Path of grype executable
-GRYPE_PATH = "/root/bin/grype"
+GRYPE_PATH = "/usr/bin/grype"
 
 # Directory to store temporary SBOM files
 TEMP_DIR = "/tmp/sbom_files"
@@ -28,14 +28,14 @@ def scan_sbom_with_grype(sbom_path: str) -> dict:
     try:
         # Run Grype command and capture output
         result = subprocess.run(
-            [GRYPE_PATH, sbom_path, "-o", "json"],
+            [GRYPE_PATH, sbom_path, "--add-cpes-if-none", "-o", "json"],
             capture_output=True,
             text=True,
             check=True
         )
         return json.loads(result.stdout)
     except subprocess.CalledProcessError as e:
-        return {"error": f"Grype scan failed: {e.stderr}"}
+        raise Exception(e.stderr)
 
 def sign_message(message: str) -> dict:
     """
