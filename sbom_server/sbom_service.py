@@ -37,7 +37,7 @@ def scan_sbom_with_grype(sbom_path: str) -> dict:
     except subprocess.CalledProcessError as e:
         raise Exception(e.stderr)
 
-def sign_message(message: str) -> dict:
+def sign_message(message: bytes) -> dict:
     """
     Sign a string using the server private key
     """
@@ -48,9 +48,8 @@ def sign_message(message: str) -> dict:
             backend=default_backend()
         )
 
-    msg_bytes = message.encode()
     sgn_bytes = private_key.sign(
-        msg_bytes,
+        message,
         padding.PSS(
             mgf = padding.MGF1(algorithm = hashes.SHA256()),
             salt_length = padding.PSS.MAX_LENGTH
@@ -58,11 +57,10 @@ def sign_message(message: str) -> dict:
         hashes.SHA256()
     )
 
-    msg_b64 = base64.b64encode(msg_bytes).decode("ascii")
+    msg_b64 = base64.b64encode(message).decode("ascii")
     sgn_b64 = base64.b64encode(sgn_bytes).decode("ascii")
 
-    signed_message = {"payload": msg_b64, "signature": sgn_b64 }
-    return signed_message
+    return (msg_b64, sgn_b64)
 
     
 @app.post("/verify-sbom")
@@ -90,11 +88,12 @@ async def verify_sbom(file: UploadFile = File(...)):
         else:
             vulnerability_count = 0
 
-        # Prepare and sign the report
-        report = {"status": "success", "vulnerability_count": vulnerability_count}
-        signed_report = sign_message(str(report))
-
-        return signed_report
+        report = b"1" + vulnerability_count.to_bytes(4, byteorder="little")
 
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        report = b"0" + str(e).encode()
+
+    # Prepare and sign the report
+    signed_report = sign_message(report)
+
+    return f"{signed_report[0]}.{signed_report[1]}"
