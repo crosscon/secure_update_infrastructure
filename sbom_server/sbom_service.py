@@ -88,12 +88,12 @@ async def verify_sbom(file: UploadFile = File(...)):
         else:
             vulnerability_count = 0
 
-        report = b"1" + vulnerability_count.to_bytes(4, byteorder="little")
+        report = b"\x01" + vulnerability_count.to_bytes(4, byteorder="little")
 
     except Exception as e:
-        report = b"0" + str(e).encode()
+        report = b"\x00" + str(e).encode()
 
     # Prepare and sign the report
     signed_report = sign_message(report)
 
-    return f"{signed_report[0]}.{signed_report[1]}"
+    return f"{signed_report[0]}.{signed_report[1]}".encode()
