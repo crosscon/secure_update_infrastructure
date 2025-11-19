@@ -15,8 +15,8 @@ import uuid # Use the built-in uuid module to get the MAC address
 SERVER_URI = "ws://statusserver.com:8765"
 VERSION_FILE = "version.info"
 INITIAL_VERSION = "1.0.0"
-UPDATE_HANDLER_CWD = "../secure_update" # Directory where the update handler script is located
-UPDATE_HANDLER_SCRIPT = "./secure_update" # The external script to process the update
+UPDATE_HANDLER_CWD = os.path.realpath(os.path.join(os.path.dirname(__file__), "../secure_update")) # Directory where the update handler script is located
+UPDATE_HANDLER_SCRIPT = os.path.join(UPDATE_HANDLER_CWD, "secure_update") # The external script to process the update
 
 def get_device_id():
     """Retrieves the MAC address of the device using the uuid module."""
@@ -95,7 +95,7 @@ async def run_client():
                         print("\nReceived 'update' command.")
                         new_version = command_data['version']
                         file_size = command_data['size']
-                        temp_firmware_file = f"temp_firmware_{new_version}.bin"
+                        temp_firmware_file = f"/tmp/temp_firmware_{new_version}.bin"
 
                         await send_status(websocket, "downloading", current_version)
 
@@ -114,8 +114,10 @@ async def run_client():
                         print(f"Executing external update handler: {UPDATE_HANDLER_SCRIPT}")
                         
                         # Use subprocess to call the external script and wait for it to complete
+                        cmd = [UPDATE_HANDLER_SCRIPT, "validate-manifest", temp_firmware_file] #TODO: change command to "update"
+                        print(f"Running command: {' '.join(cmd)} in {UPDATE_HANDLER_CWD}")
                         process = subprocess.run(
-                            [UPDATE_HANDLER_SCRIPT, "validate-manifest", temp_firmware_file], #TODO: change command to "update"
+                            cmd,
                             capture_output=True, text=True, cwd=UPDATE_HANDLER_CWD
                         )
                         

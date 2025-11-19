@@ -1,6 +1,5 @@
 import os
 import subprocess
-import json
 import uuid
 import base64
 import gzip
@@ -8,6 +7,7 @@ from fastapi import FastAPI, File, UploadFile
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
+from hashlib import sha256
 
 
 app = FastAPI()
@@ -76,6 +76,9 @@ async def verify_proof(file: UploadFile = File(...)):
         # Read uploaded bytes
         uploaded_bytes = await file.read()
 
+        # Compute the SHA-256 hash of the uploaded proof
+        proof_hash = sha256(uploaded_bytes).digest()
+
         try:
             decompressed = gzip.decompress(uploaded_bytes)
         except OSError as e:
@@ -92,13 +95,13 @@ async def verify_proof(file: UploadFile = File(...)):
         # If no exception is raised, the certificate has been verified correctly
         # Note: here we could parse ethos output to identify trust steps
 
-        report = b"\x01"
+        report = proof_hash + b"\x01"
 
         # Clean up temporary file
         os.remove(proof_path)
 
     except Exception as e:
-        report = b"\x00" + str(e).encode()
+        report = proof_hash + b"\x00" + str(e).encode()
 
     # Prepare and sign the report
     signed_report = sign_message(report)

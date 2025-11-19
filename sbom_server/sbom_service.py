@@ -7,6 +7,7 @@ from fastapi import FastAPI, File, UploadFile
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
+from hashlib import sha256
 
 
 app = FastAPI()
@@ -76,6 +77,11 @@ async def verify_sbom(file: UploadFile = File(...)):
         with open(sbom_path, "wb") as sbom_file:
             sbom_file.write(await file.read())
 
+        # Calculate SHA-256 hash of the SBOM file
+        with open(sbom_path, "rb") as sbom_file:
+            sbom_data = sbom_file.read()
+            sbom_hash = sha256(sbom_data).digest()
+
         # Scan SBOM using Grype
         vulnerabilities_report = scan_sbom_with_grype(sbom_path)
 
@@ -88,10 +94,10 @@ async def verify_sbom(file: UploadFile = File(...)):
         else:
             vulnerability_count = 0
 
-        report = b"\x01" + vulnerability_count.to_bytes(4, byteorder="little")
+        report = sbom_hash + b"\x01" + vulnerability_count.to_bytes(4, byteorder="little")
 
     except Exception as e:
-        report = b"\x00" + str(e).encode()
+        report = sbom_hash + b"\x00" + str(e).encode()
 
     # Prepare and sign the report
     signed_report = sign_message(report)
