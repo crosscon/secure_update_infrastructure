@@ -13,14 +13,11 @@ from cryptography.hazmat.primitives.asymmetric import padding
 app = FastAPI()
 
 # Path of ethos launcher
-ETHOS_PATH = "/usr/bin/ethos_check.sh"
+ETHOS_PATH = "/opt/ethos/"
+ETHOS_SCRIPT = os.path.join(ETHOS_PATH, "ethos_check.sh")
 
 # Timeout (in seconds) for ethos subprocess
 TIMEOUT = 3600    # 1 hour
-
-# Directory to store temporary proof certificate files
-TEMP_DIR = "/tmp/proof_certificates"
-os.makedirs(TEMP_DIR, exist_ok=True)
 
 # Path of private key file (in PEM format)
 PRIV_KEY = "/root/private_key.pem"
@@ -32,7 +29,7 @@ def verify_proof_certificate(proof_path: str) -> dict:
     try:
         # Run Ethos command and capture output
         result = subprocess.run(
-            [ETHOS_PATH, proof_path],
+            [ETHOS_SCRIPT, proof_path],
             capture_output=True,
             text=True,
             check=True,
@@ -85,7 +82,7 @@ async def verify_proof(file: UploadFile = File(...)):
             raise Exception(f"Invalid gzip archive: {e}")
 
         proof_filename = f"{uuid.uuid4()}.cpc"
-        proof_path = os.path.join(TEMP_DIR, proof_filename)
+        proof_path = os.path.join(ETHOS_PATH, proof_filename)
 
         with open(proof_path, "wb") as proof_file:
             proof_file.write(decompressed)
@@ -95,10 +92,10 @@ async def verify_proof(file: UploadFile = File(...)):
         # If no exception is raised, the certificate has been verified correctly
         # Note: here we could parse ethos output to identify trust steps
 
+        report = b"\x01"
+
         # Clean up temporary file
         os.remove(proof_path)
-
-        report = b"\x01"
 
     except Exception as e:
         report = b"\x00" + str(e).encode()
