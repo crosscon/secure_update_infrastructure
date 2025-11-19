@@ -3,6 +3,7 @@ import subprocess
 import json
 import uuid
 import base64
+import gzip
 from fastapi import FastAPI, File, UploadFile
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
@@ -75,12 +76,19 @@ async def verify_proof(file: UploadFile = File(...)):
     Endpoint to upload a proof certificate and return the result of checker
     """
     try:
-        # Save proof certificate to a temporary file
-        proof_filename = f"{uuid.uuid4()}.{file.filename.split('.')[-1]}"
+        # Read uploaded bytes
+        uploaded_bytes = await file.read()
+
+        try:
+            decompressed = gzip.decompress(uploaded_bytes)
+        except OSError as e:
+            raise Exception(f"Invalid gzip archive: {e}")
+
+        proof_filename = f"{uuid.uuid4()}.cpc"
         proof_path = os.path.join(TEMP_DIR, proof_filename)
 
         with open(proof_path, "wb") as proof_file:
-            proof_file.write(await file.read())
+            proof_file.write(decompressed)
 
         # Check proof certificate
         pc_result = verify_proof_certificate(proof_path)
