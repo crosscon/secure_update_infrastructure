@@ -12,10 +12,11 @@ import sys
 import uuid # Use the built-in uuid module to get the MAC address
 
 # --- Configuration ---
-SERVER_URI = "ws://localhost:8765"
+SERVER_URI = "ws://statusserver.com:8765"
 VERSION_FILE = "version.info"
 INITIAL_VERSION = "1.0.0"
-UPDATE_HANDLER_SCRIPT = "out/secure_update" # The external script to process the update
+UPDATE_HANDLER_CWD = "../secure_update" # Directory where the update handler script is located
+UPDATE_HANDLER_SCRIPT = "./secure_update" # The external script to process the update
 
 def get_device_id():
     """Retrieves the MAC address of the device using the uuid module."""
@@ -114,8 +115,8 @@ async def run_client():
                         
                         # Use subprocess to call the external script and wait for it to complete
                         process = subprocess.run(
-                            [sys.executable, UPDATE_HANDLER_SCRIPT, "update", temp_firmware_file],
-                            capture_output=True, text=True
+                            [UPDATE_HANDLER_SCRIPT, "validate-manifest", temp_firmware_file], #TODO: change command to "update"
+                            capture_output=True, text=True, cwd=UPDATE_HANDLER_CWD
                         )
                         
                         print("--- Handler Script Output ---")
