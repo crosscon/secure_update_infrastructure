@@ -90,10 +90,10 @@ async def verify_proof(file: UploadFile = File(...)):
         # Clean up temporary file
         os.remove(proof_path)
 
-        report = b"1"
+        report = b"\x01"
 
     except Exception as e:
-        report = b"0" + str(e).encode()
+        report = b"\x00" + str(e).encode()
 
     # Prepare and sign the report
     signed_report = sign_message(report)
