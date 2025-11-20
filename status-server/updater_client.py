@@ -115,7 +115,7 @@ async def run_client():
                         print(f"Executing external update handler: {UPDATE_HANDLER_SCRIPT}")
                         
                         # Use subprocess to call the external script and wait for it to complete
-                        cmd = [UPDATE_HANDLER_SCRIPT, "validate-manifest", temp_firmware_file] #TODO: change command to "update"
+                        cmd = [UPDATE_HANDLER_SCRIPT, "update", temp_firmware_file]
                         print(f"Running command: {' '.join(cmd)} in {UPDATE_HANDLER_CWD}")
                         process = subprocess.run(
                             cmd,
