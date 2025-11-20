@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # updater_client.py
 #
 # An actual device client that connects to the SUIT server. It handles
@@ -142,6 +143,11 @@ async def run_client():
                         # Clean up the temporary file
                         os.remove(temp_firmware_file)
                         print(f"Cleaned up temporary file: {temp_firmware_file}")
+
+                        if process.returncode == 0:
+                            print(f"Rebooting device to apply new version {current_version} in 10 seconds...\n")
+                            await asyncio.sleep(10)
+                            os.system('reboot')
 
             except websockets.exceptions.ConnectionClosed:
                 print("\nConnection to server closed.")
