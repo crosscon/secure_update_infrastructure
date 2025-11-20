@@ -156,16 +156,21 @@ async def run_client():
                 print(f"\nAn error occurred: {e}")
                 break
 
+async def main():
+    while True:
+        try:
+            await run_client()
+        except ConnectionRefusedError:
+            print(f"Connection refused. Is the server running at {SERVER_URI}?")
+            print("Retrying in 5 seconds...")
+            await asyncio.sleep(5)
+        except Exception as e:
+            print(f"A critical error occurred: {e}")
+            exit(1)
+
 if __name__ == "__main__":
     if not os.path.exists(UPDATE_HANDLER_SCRIPT):
         print(f"Error: The update handler script '{UPDATE_HANDLER_SCRIPT}' was not found.")
         print("Please create it or ensure it's in the same directory.")
     else:
-        try:
-            asyncio.run(run_client())
-        except KeyboardInterrupt:
-            print("\nUpdater client stopped.")
-        except ConnectionRefusedError:
-            print(f"Connection refused. Is the server running at {SERVER_URI}?")
-        except Exception as e:
-            print(f"A critical error occurred: {e}")
+        asyncio.run(main())
