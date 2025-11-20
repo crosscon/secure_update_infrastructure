@@ -14,7 +14,7 @@ app = FastAPI()
 
 # Path of ethos launcher
 ETHOS_PATH = "/opt/ethos/"
-ETHOS_SCRIPT = os.path.join(ETHOS_PATH, "ethos_check.sh")
+ETHOS_SCRIPT = os.path.join(ETHOS_PATH, "ethos")
 
 # Timeout (in seconds) for ethos subprocess
 TIMEOUT = 3600    # 1 hour
